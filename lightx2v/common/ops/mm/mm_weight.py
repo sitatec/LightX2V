@@ -1628,14 +1628,14 @@ class MMWeightWfp8channelAfp8channeldynamicSgl(MMWeightQuantTemplate):
 
     def apply(self, input_tensor):
         input_tensor_quant, input_tensor_scale = self.act_quant_func(input_tensor)
-        print(self.weight_scale)
-        print(input_tensor_scale)
+
+        print(self.weight)
+
         output_tensor = sgl_kernel.fp8_scaled_mm(
             input_tensor_quant,
             self.weight,
             input_tensor_scale,
-            #self.weight_scale or torch.ones_like(input_tensor_scale, dtype=torch.float32, device=input_tensor_scale.device),
-            torch.ones_like(input_tensor_scale, dtype=torch.float32, device=input_tensor_scale.device),
+            self.weight_scale or torch.ones((self.weight.shape[1], 1), dtype=torch.float32, device=self.weight.device),
             self.infer_dtype,
             self._get_actual_bias(),
         )
