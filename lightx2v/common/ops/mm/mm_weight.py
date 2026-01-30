@@ -1633,7 +1633,7 @@ class MMWeightWfp8channelAfp8channeldynamicSgl(MMWeightQuantTemplate):
             input_tensor_quant,
             self.weight,
             input_tensor_scale,
-            self.weight_scale or torch.ones((self.weight.shape[1], 1), dtype=torch.float32, device=self.weight.device),
+            self.weight_scale if self.weight_scale is not None else torch.ones((self.weight.shape[1], 1), dtype=torch.float32, device=self.weight.device),
             self.infer_dtype,
             self._get_actual_bias(),
         )
