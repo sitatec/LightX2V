@@ -1629,8 +1629,6 @@ class MMWeightWfp8channelAfp8channeldynamicSgl(MMWeightQuantTemplate):
     def apply(self, input_tensor):
         input_tensor_quant, input_tensor_scale = self.act_quant_func(input_tensor)
 
-        print(self.weight)
-
         output_tensor = sgl_kernel.fp8_scaled_mm(
             input_tensor_quant,
             self.weight,
