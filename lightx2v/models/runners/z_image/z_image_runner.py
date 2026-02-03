@@ -45,7 +45,7 @@ class ZImageRunner(DefaultRunner):
         self.vae = self.load_vae()
 
     def load_transformer(self):
-        model = ZImageTransformerModel(self.config)
+        model = ZImageTransformerModel(os.path.join(self.config["model_path"], "transformer"), self.config, self.init_device)
         return model
 
     def load_text_encoder(self):
@@ -266,7 +266,7 @@ class ZImageRunner(DefaultRunner):
                 width, height = int(width * scale), int(height * scale)
                 logger.warning(f"Custom shape is too large, scaled to {width}x{height}")
             width, height = max(width, min_size), max(height, min_size)
-            logger.info(f"Qwen Image Runner got custom shape: {width}x{height}")
+            logger.info(f"Z Image Runner got custom shape: {width}x{height}")
             return (width, height)
 
         aspect_ratio = self.input_info.aspect_ratio if self.input_info.aspect_ratio else self.config.get("aspect_ratio", None)
