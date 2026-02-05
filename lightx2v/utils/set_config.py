@@ -8,6 +8,7 @@ from torch.distributed.tensor.device_mesh import init_device_mesh
 
 from lightx2v.utils.input_info import ALL_INPUT_INFO_KEYS
 from lightx2v.utils.lockable_dict import LockableDict
+from lightx2v.utils.utils import is_main_process
 from lightx2v_platform.base.global_var import AI_DEVICE
 
 
@@ -34,10 +35,13 @@ def get_default_config():
     return default_config
 
 
-def set_config(args):
+def set_args2config(args):
     config = get_default_config()
     config.update({k: v for k, v in vars(args).items() if k not in ALL_INPUT_INFO_KEYS})
+    return config
 
+
+def auto_calc_config(config):
     if config.get("config_json", None) is not None:
         logger.info(f"Loading some config from {config['config_json']}")
         with open(config["config_json"], "r") as f:
@@ -127,6 +131,12 @@ def set_config(args):
     return config
 
 
+def set_config(args):
+    config = set_args2config(args)
+    config = auto_calc_config(config)
+    return config
+
+
 def set_parallel_config(config):
     if config["parallel"]:
         tensor_p_size = config["parallel"].get("tensor_p_size", 1)
@@ -159,9 +169,5 @@ def set_parallel_config(config):
 
 def print_config(config):
     config_to_print = config.copy()
-    config_to_print.pop("device_mesh", None)
-    if config["parallel"]:
-        if dist.get_rank() == 0:
-            logger.info(f"config:\n{json.dumps(config_to_print, ensure_ascii=False, indent=4)}")
-    else:
-        logger.info(f"config:\n{json.dumps(config_to_print, ensure_ascii=False, indent=4)}")
+    if is_main_process():
+        logger.info(f"config:\n{json.dumps(config_to_print, ensure_ascii=False, indent=4, default=str)}")
