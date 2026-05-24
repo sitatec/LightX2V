@@ -1416,6 +1416,7 @@ class MMCalibNvfp4(MMWeight):
         is_post_adapter=False,
         lora_prefix="diffusion_model.blocks",
         lora_path="",
+        even_iterations_only=True,
     ):
         super().__init__(
             weight_name,
@@ -1431,13 +1432,14 @@ class MMCalibNvfp4(MMWeight):
         self.running_absmax = None
         self.count = 0
         self.decay = 0.9
+        self.even_iterations_only = even_iterations_only
 
     def apply(self, input_tensor):
         shape = (input_tensor.shape[0], self.weight.shape[1])
         dtype, device = input_tensor.dtype, input_tensor.device
 
         current_absmax = torch.max(torch.abs(input_tensor)).to("cpu")
-        if self.count % 2 == 0:
+        if not self.even_iterations_only or self.count % 2 == 0:
             if self.running_absmax is None:
                 self.running_absmax = current_absmax
             else:
@@ -1462,6 +1464,20 @@ class MMCalibNvfp4(MMWeight):
         if bias is not None:
             return torch.addmm(bias, input_tensor, weight, out=output_tensor)
         return torch.mm(input_tensor, weight, out=output_tensor)
+
+
+@MM_WEIGHT_REGISTER("CalibDistill")
+class MMCalibNvfp4Distill(MMCalibNvfp4):
+    def __init__(
+        self,
+        *args,
+        **kwargs,
+    ):
+        kwargs["even_iterations_only"] = False
+        super().__init__(
+            *args,
+            **kwargs,
+        )
 
 
 @MM_WEIGHT_REGISTER("fp8-q8f")
