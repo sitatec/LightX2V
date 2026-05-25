@@ -54,6 +54,8 @@ class LightLLMKernelTextEncoder:
 
         self.model_path = config["model_path"]
 
+        self.cpu_offloading_enabled = config.get("qwen25vl_cpu_offload", False)
+
         # Kernel optimization flags
         self.use_flash_attention_kernel = config.get("use_flash_attention_kernel", True)
         self.use_rmsnorm_kernel = config.get("use_rmsnorm_kernel", True)
@@ -104,7 +106,7 @@ class LightLLMKernelTextEncoder:
         self.model = Qwen2_5_VLForConditionalGeneration.from_pretrained(
             text_encoder_path,
             torch_dtype=self.dtype,
-            device_map=self.device,
+            device_map="cpu" if self.cpu_offloading_enabled else self.device,
             attn_implementation=attn_impl,
         )
         self.model.eval()
@@ -201,6 +203,9 @@ class LightLLMKernelTextEncoder:
         """
         from lightx2v_platform.base.global_var import AI_DEVICE
 
+        if self.cpu_offloading_enabled:
+            self.reload_to_device()
+
         template = self.prompt_template_encode
         drop_idx = self.prompt_template_encode_start_idx
 
@@ -288,6 +293,8 @@ class LightLLMKernelTextEncoder:
         prompt_embeds_mask = prompt_embeds_mask.view(1, seq_len)
 
         logger.info(f"✓ Kernel inference complete: prompt_embeds shape={prompt_embeds.shape}")
+        if self.cpu_offloading_enabled:
+            self.offload_to_cpu()
 
         return prompt_embeds, prompt_embeds_mask, image_info
 
